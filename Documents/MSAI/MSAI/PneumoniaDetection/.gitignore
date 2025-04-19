@@ -1,0 +1,12 @@
+*__pycache__/
+.ipynb_checkpoints/
+*.pt
+*.log
+.env
+*.csv
+*.pkl
+*/data/rsna-pneumonia-detection-challenge
+*.txt
+*.dcm
+*.json
+*/classification_data
