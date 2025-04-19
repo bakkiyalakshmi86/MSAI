@@ -1,0 +1,10 @@
+torch
+torchvision
+torchcam
+matplotlib
+reportlab
+pandas
+numpy
+pillow
+scikit-learn
+pydicom
