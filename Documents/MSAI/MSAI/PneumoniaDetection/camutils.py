@@ -29,10 +29,10 @@ def generate_gradcam(model, input_tensor, original_image, target_layer_name=None
     output = model(input_tensor)
     model.zero_grad()
     class_idx = int((output > 0.5).item())
-    output[0][class_idx].backward()
+    output[0].backward()
 
-    grads_val = gradients[0][0].detach().numpy()
-    fmap = activations[0][0].detach().numpy()
+    grads_val = gradients[0][0].detach().cpu().numpy()
+    fmap = activations[0][0].detach().cpu().numpy()
 
     weights = np.mean(grads_val, axis=(1, 2))
     cam = np.zeros(fmap.shape[1:], dtype=np.float32)

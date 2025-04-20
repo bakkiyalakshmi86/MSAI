@@ -3,8 +3,7 @@ import torch
 from PIL import Image
 import torchvision.transforms as transforms
 from model import PneumoniaCNN
-from datapreprocessing import preprocess_image
-from cam_utils import generate_gradcam  # Assume you have a Grad-CAM util script
+from camutils import generate_gradcam  # Assume you have a Grad-CAM util script
 
 # Title
 st.title("Pneumonia Detection with Explainable AI")
@@ -17,7 +16,13 @@ if uploaded_file is not None:
     st.image(image, caption="Uploaded Image", use_column_width=True)
 
    
-    input_tensor = preprocess_image(uploaded_file).unsqueeze(0)  # Add batch dimension
+    # Transform
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.5], std=[0.5])
+    ])
+    input_tensor = transform(image).unsqueeze(0)  # Add batch dimension
 
     # Load model
     model = PneumoniaCNN()

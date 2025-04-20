@@ -7,7 +7,7 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Define paths
-DATA_DIR = "data/rsna-pneumonia-detection-challenge/"
+DATA_DIR = "/content/MSAI/Documents/MSAI/MSAI/PneumoniaDetection/data/rsna"
 IMG_DIR = os.path.join(DATA_DIR, "stage_2_train_images")
 CSV_PATH = os.path.join(DATA_DIR, "stage_2_train_labels.csv")
 
@@ -27,7 +27,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 if __name__ == '__main__':
 # Training loop
-    for epoch in range(10):  # You can increase/decrease this
+    for epoch in range(50):  # You can increase/decrease this
         model.train()
         running_loss = 0.0
 

@@ -9,7 +9,7 @@ import os
 from torchvision.transforms import ToPILImage
 
 # Paths
-DATA_DIR = "data/rsna-pneumonia-detection-challenge"
+DATA_DIR = "/content/MSAI/Documents/MSAI/MSAI/PneumoniaDetection/data/rsna"
 IMG_DIR = os.path.join(DATA_DIR, "stage_2_train_images")
 CSV_PATH = os.path.join(DATA_DIR, "stage_2_train_labels.csv")
 OUTPUT_DIR = "gradcam_outputs"
@@ -28,13 +28,20 @@ model.load_state_dict(torch.load("model.pth", map_location=device))
 
 if __name__ == '__main__':
     model.eval()
+    correct = 0
+    total = 0
 
     # Evaluate and generate Grad-CAM
     for idx, (img, label, original_img) in enumerate(val_loader):
         img, label = img.to(device), label.to(device)  # Move images and labels to the correct device
         output = model(img)
-        probs = torch.sigmoid(output).squeeze().tolist()  # Get probabilities
-        
+        probs = torch.sigmoid(output).squeeze()  # Get probabilities
+        probs_list = probs.tolist()
+        pred_labels = (probs >= 0.5).int()
+        true_labels = label.int()
+
+        correct += (pred_labels == true_labels).sum().item()
+        total += label.size(0)
         
 
         for i in range(img.size(0)):  # Loop through each image in the batch
@@ -46,5 +53,10 @@ if __name__ == '__main__':
             heatmap = generate_gradcam(model, imag, original_image)
             
             # Save the generated heatmap with prediction probability and true label
-            heatmap.save(os.path.join(OUTPUT_DIR, f"cam_{idx}_{i}_pred{probs[i]:.4f}_true{int(label[i].item())}.png"))
-    print("✅ Grad-CAM visualizations saved to gradcam_outputs/")
+            heatmap.save(os.path.join(
+                OUTPUT_DIR,
+                f"cam_{idx}_{i}_pred{pred_labels[i].item()}_prob{probs[i]:.4f}_true{true_labels[i].item()}.png"
+            ))
+    accuracy = correct / total
+    print(f"✅ Grad-CAM visualizations saved to gradcam_outputs/")
+    print(f"📊 Accuracy: {accuracy:.4f} ({correct}/{total})")
