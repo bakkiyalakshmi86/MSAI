@@ -24,10 +24,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = PneumoniaCNN().to(device)
 criterion = torch.nn.BCEWithLogitsLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-
+num_epoch=25
 if __name__ == '__main__':
 # Training loop
-    for epoch in range(50):  # You can increase/decrease this
+    for epoch in range(num_epoch):  # You can increase/decrease this
         model.train()
         running_loss = 0.0
 
@@ -41,7 +41,7 @@ if __name__ == '__main__':
             running_loss += loss.item()
 
         avg_loss = running_loss / len(train_loader)
-        print(f"Epoch [{epoch+1}/10], Loss: {avg_loss:.4f}")
+        print(f"Epoch [{epoch+1}/num_epoch], Loss: {avg_loss:.4f}")
 
     # Save model
     torch.save(model.state_dict(), "model.pth")
