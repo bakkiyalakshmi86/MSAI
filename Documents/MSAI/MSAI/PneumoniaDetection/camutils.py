@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import matplotlib.cm as cm
 
-def generate_gradcam(model, input_tensor, original_image, target_layer_name=None):
+def generate_gradcam(model, input_tensor, original_image, target_layer_name=None, blend=True):
     model.eval()
 
     gradients = []
@@ -19,7 +19,7 @@ def generate_gradcam(model, input_tensor, original_image, target_layer_name=None
         activations.append(output)
 
     if target_layer_name is None:
-        target_layer = model.conv_block3  # Use the final conv block
+        target_layer = model.conv_block5[0]  # Use the final conv block
     else:
         target_layer = dict(model.named_modules())[target_layer_name]
 
@@ -29,7 +29,7 @@ def generate_gradcam(model, input_tensor, original_image, target_layer_name=None
     output = model(input_tensor)
     model.zero_grad()
     class_idx = int((output > 0.5).item())
-    output[0].backward()
+    output[0][0].backward()
 
     grads_val = gradients[0][0].detach().cpu().numpy()
     fmap = activations[0][0].detach().cpu().numpy()
@@ -43,14 +43,13 @@ def generate_gradcam(model, input_tensor, original_image, target_layer_name=None
     cam = np.maximum(cam, 0)
     cam -= np.min(cam)
     cam /= (np.max(cam) + 1e-8)
-
     cam = Image.fromarray((cam * 255).astype(np.uint8)).resize(original_image.size, Image.BILINEAR)
     cam = np.array(cam)
 
     heatmap = cm.jet(cam / 255.0)[:, :, :3]  # Drop alpha channel
     heatmap = (heatmap * 255).astype(np.uint8)
     heatmap = Image.fromarray(heatmap)
-
+    
     if original_image.mode != "RGB":
         original_image = original_image.convert("RGB")
 
@@ -60,3 +59,4 @@ def generate_gradcam(model, input_tensor, original_image, target_layer_name=None
     backward_handle.remove()
 
     return blended
+    

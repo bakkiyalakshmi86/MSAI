@@ -3,7 +3,12 @@ import torch
 from PIL import Image
 import torchvision.transforms as transforms
 from model import PneumoniaCNN
-from camutils import generate_gradcam  # Assume you have a Grad-CAM util script
+import numpy as np
+import torch.nn.functional as F
+import matplotlib.cm as cm
+from torchvision.transforms import ToPILImage
+from camutils import generate_gradcam 
+
 
 # Title
 st.title("Pneumonia Detection with Explainable AI")
@@ -15,7 +20,6 @@ if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("L")  # Convert to grayscale
     st.image(image, caption="Uploaded Image", use_column_width=True)
 
-   
     # Transform
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
@@ -41,5 +45,5 @@ if uploaded_file is not None:
 
     # Grad-CAM heatmap
     st.markdown("### Grad-CAM Heatmap")
-    heatmap = generate_gradcam(model, input_tensor)
+    heatmap = generate_gradcam(model, input_tensor, original_image=image)
     st.image(heatmap, caption="Explainability via Grad-CAM", use_column_width=True)

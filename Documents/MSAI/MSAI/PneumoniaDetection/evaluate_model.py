@@ -7,9 +7,11 @@ from camutils import generate_gradcam  # Your Grad-CAM function
 import pandas as pd
 import os
 from torchvision.transforms import ToPILImage
+from sklearn.metrics import precision_score, recall_score, f1_score 
+
 
 # Paths
-DATA_DIR = "/content/MSAI/Documents/MSAI/MSAI/PneumoniaDetection/data/rsna"
+DATA_DIR = "/Users/bakkiya/Documents/MSAI/MSAI/PneumoniaDetection/data/rsna-pneumonia-detection-challenge"
 IMG_DIR = os.path.join(DATA_DIR, "stage_2_train_images")
 CSV_PATH = os.path.join(DATA_DIR, "stage_2_train_labels.csv")
 OUTPUT_DIR = "gradcam_outputs"
@@ -30,6 +32,8 @@ if __name__ == '__main__':
     model.eval()
     correct = 0
     total = 0
+    all_preds = []
+    all_labels = []
 
     # Evaluate and generate Grad-CAM
     for idx, (img, label, original_img) in enumerate(val_loader):
@@ -42,6 +46,9 @@ if __name__ == '__main__':
 
         correct += (pred_labels == true_labels).sum().item()
         total += label.size(0)
+
+        all_preds.extend(pred_labels.cpu().numpy())    # Collect predictions
+        all_labels.extend(true_labels.cpu().numpy())   # Collect ground truths
         
 
         for i in range(img.size(0)):  # Loop through each image in the batch
@@ -58,5 +65,11 @@ if __name__ == '__main__':
                 f"cam_{idx}_{i}_pred{pred_labels[i].item()}_prob{probs[i]:.4f}_true{true_labels[i].item()}.png"
             ))
     accuracy = correct / total
+    precision = precision_score(all_labels, all_preds)
+    recall = recall_score(all_labels, all_preds)
+    f1 = f1_score(all_labels, all_preds)
     print(f"✅ Grad-CAM visualizations saved to gradcam_outputs/")
     print(f"📊 Accuracy: {accuracy:.4f} ({correct}/{total})")
+    print(f"📈 Precision: {precision:.4f}")
+    print(f"📉 Recall:    {recall:.4f}")
+    print(f"🎯 F1 Score:  {f1:.4f}")

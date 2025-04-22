@@ -27,12 +27,27 @@ class PneumoniaCNN(nn.Module):
             nn.ReLU(),
             nn.MaxPool2d(2)
         )
+        self.conv_block4 = torch.nn.Sequential(
+                torch.nn.Conv2d(128, 256, kernel_size=3, padding=1),
+                torch.nn.BatchNorm2d(256),
+                torch.nn.ReLU(),
+                torch.nn.MaxPool2d(2)
+        )
+
+        self.conv_block5 = torch.nn.Sequential(
+                torch.nn.Conv2d(256, 512, kernel_size=3, padding=1),
+                torch.nn.BatchNorm2d(512),
+                torch.nn.ReLU(),
+                torch.nn.MaxPool2d(2)
+        )
 
         with torch.no_grad():
           dummy_input = torch.zeros(1, 1, 224, 224)
           x = self.conv_block1(dummy_input)
           x = self.conv_block2(x)
           x = self.conv_block3(x)
+          x = self.conv_block4(x)
+          x = self.conv_block5(x)
           flatten_dim = x.view(1, -1).shape[1]
 
         self.fc = nn.Sequential(
@@ -46,6 +61,8 @@ class PneumoniaCNN(nn.Module):
         x = self.conv_block1(x)
         x = self.conv_block2(x)
         x = self.conv_block3(x)
+        x = self.conv_block4(x)
+        x = self.conv_block5(x)
 
         x = x.view(x.size(0), -1)  # Flatten
         x = self.fc(x)
