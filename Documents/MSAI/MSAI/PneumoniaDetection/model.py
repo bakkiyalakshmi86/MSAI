@@ -66,5 +66,5 @@ class PneumoniaCNN(nn.Module):
 
         x = x.view(x.size(0), -1)  # Flatten
         x = self.fc(x)
-        #return torch.sigmoid(x)  # Output between 0 and 1
-        return x
+        return torch.sigmoid(x)  # Output between 0 and 1
+        #return x

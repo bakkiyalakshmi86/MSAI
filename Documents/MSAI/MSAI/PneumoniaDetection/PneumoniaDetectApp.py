@@ -7,7 +7,8 @@ import numpy as np
 import torch.nn.functional as F
 import matplotlib.cm as cm
 from torchvision.transforms import ToPILImage
-from camutils import generate_gradcam 
+from camutils import generate_gradcam, explain_with_lime,  explain_with_scorecam, explain_with_shap
+
 
 
 # Title
@@ -36,14 +37,29 @@ if uploaded_file is not None:
     # Prediction
     with torch.no_grad():
         output = model(input_tensor)
-        prob = torch.sigmoid(output).item()
+        prob = output.item()
 
     # Display prediction
     diagnosis = "Pneumonia Detected" if prob > 0.5 else "Normal"
     st.markdown(f"### Prediction Score: {prob:.4f}")
     st.markdown(f"### Diagnosis: **{diagnosis}**")
 
-    # Grad-CAM heatmap
     st.markdown("### Grad-CAM Heatmap")
-    heatmap = generate_gradcam(model, input_tensor, original_image=image)
-    st.image(heatmap, caption="Explainability via Grad-CAM", use_column_width=True)
+    target_layer = model.conv_block5[0]
+    heatmap = generate_gradcam(model, input_tensor, original_image=image, target_layer=target_layer)
+    st.image(heatmap, caption=f"Grad-CAM from conv_block5[0] ", use_column_width=True)
+
+    st.markdown("### SHAP Explanation")
+    shap_img = explain_with_shap(model, input_tensor, image)
+    st.image(shap_img, caption="SHAP Attribution Map", use_column_width=True)
+
+    st.markdown("### LIME Explanation")
+    lime_img = explain_with_lime(model, image)
+    st.image(lime_img, caption="LIME Interpretation", use_column_width=True)
+
+    st.markdown("### Score-CAM Explanation")
+    scorecam_img = explain_with_scorecam(model, input_tensor, image, target_layer=target_layer)
+    st.image(scorecam_img, caption="Score-CAM", use_column_width=True)
+    
+
+    

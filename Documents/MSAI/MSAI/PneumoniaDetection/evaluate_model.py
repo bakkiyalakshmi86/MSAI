@@ -3,7 +3,7 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 from model import PneumoniaCNN
 from datapreprocessing import prepare_dataloaders
-from camutils import generate_gradcam  # Your Grad-CAM function
+from camutils import generate_gradcam, explain_with_lime,  explain_with_scorecam, explain_with_shap
 import pandas as pd
 import os
 from torchvision.transforms import ToPILImage
@@ -28,6 +28,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = PneumoniaCNN().to(device)
 model.load_state_dict(torch.load("model.pth", map_location=device))
 
+to_pil = ToPILImage()
+
 if __name__ == '__main__':
     model.eval()
     correct = 0
@@ -44,7 +46,7 @@ if __name__ == '__main__':
         pred_labels = (probs >= 0.5).int()
         true_labels = label.int()
 
-        correct += (pred_labels == true_labels).sum().item()
+        correct += (pred_labels == label).sum().item()
         total += label.size(0)
 
         all_preds.extend(pred_labels.cpu().numpy())    # Collect predictions
@@ -52,18 +54,42 @@ if __name__ == '__main__':
         
 
         for i in range(img.size(0)):  # Loop through each image in the batch
-            imag = img[i].unsqueeze(0)  # Select the i-th image and add batch dimension
-            original_image = original_img[i]  # Get corresponding original image
-            to_pil = ToPILImage()
-            original_image = to_pil(original_image)
+            image_tensor = img[i].unsqueeze(0) 
+            original_tensor = original_img[i] # Select the i-th image and add batch dimension
+            original_image = to_pil(original_tensor) # Get corresponding original image
             # Generate Grad-CAM heatmap for the i-th image
-            heatmap = generate_gradcam(model, imag, original_image)
+        heatmap = generate_gradcam(model, image_tensor, original_image)
+        
+        # Generate LIME explanation
+        lime_img = explain_with_lime(model, original_image)
+        
+        # Generate SHAP explanation
+        shap_img = explain_with_shap(model, image_tensor, original_image)
+        
+        # Generate Score-CAM explanation
+        scorecam_img = explain_with_scorecam(model, image_tensor, original_image)
+
+        # Save the generated heatmap with prediction probability and true label
+        heatmap.save(os.path.join(
+            OUTPUT_DIR,
+            f"cam_{idx}_{i}_pred{pred_labels[i].item()}_prob{probs[i]:.4f}_true{true_labels[i].item()}.png"
+        ))
+
+        # Optionally save the LIME, SHAP, and Score-CAM images
+        lime_img.save(os.path.join(
+            OUTPUT_DIR,
+            f"lime_{idx}_{i}_pred{pred_labels[i].item()}_prob{probs[i]:.4f}_true{true_labels[i].item()}.png"
+        ))
+        shap_img.save(os.path.join(
+            OUTPUT_DIR,
+            f"shap_{idx}_{i}_pred{pred_labels[i].item()}_prob{probs[i]:.4f}_true{true_labels[i].item()}.png"
+        ))
+        scorecam_img.save(os.path.join(
+            OUTPUT_DIR,
+            f"scorecam_{idx}_{i}_pred{pred_labels[i].item()}_prob{probs[i]:.4f}_true{true_labels[i].item()}.png"
+        ))
             
-            # Save the generated heatmap with prediction probability and true label
-            heatmap.save(os.path.join(
-                OUTPUT_DIR,
-                f"cam_{idx}_{i}_pred{pred_labels[i].item()}_prob{probs[i]:.4f}_true{true_labels[i].item()}.png"
-            ))
+            
     accuracy = correct / total
     precision = precision_score(all_labels, all_preds)
     recall = recall_score(all_labels, all_preds)
