@@ -36,16 +36,6 @@ class RSNADataset(Dataset):
             return transformed_img, label
         
 
-    """
-    def preprocess_image(image_path):
-    transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ])
-    img = Image.open(image_source).convert("RGB")
-    return transform(img) 
-"""
 
 def prepare_dataloaders(csv_path, image_dir, batch_size=32):
     df = pd.read_csv(csv_path)
@@ -54,14 +44,25 @@ def prepare_dataloaders(csv_path, image_dir, batch_size=32):
 
     df_train, df_val = train_test_split(df, test_size=0.2, stratify=df['Target'], random_state=42)
 
-    transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.5], std=[0.5])
-])
+    # Augmentation for training set
+    train_transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.RandomRotation(degrees=15),
+        transforms.ColorJitter(brightness=0.1, contrast=0.1),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.5], std=[0.5])
+    ])
 
-    train_dataset = RSNADataset(df_train, transform=transform, return_original=False)
-    val_dataset = RSNADataset(df_val, transform=transform, return_original=True)
+    # No augmentation for validation, just resize and normalize
+    val_transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.5], std=[0.5])
+    ])
+
+    train_dataset = RSNADataset(df_train, transform=train_transform, return_original=False)
+    val_dataset = RSNADataset(df_val, transform=val_transform, return_original=True)
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
