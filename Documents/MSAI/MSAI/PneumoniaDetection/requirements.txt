@@ -8,3 +8,9 @@ numpy
 pillow
 scikit-learn
 pydicom
+shap
+lime
+opencv-python
+streamlit
+scipy
+numpy
