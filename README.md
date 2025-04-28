@@ -19,7 +19,7 @@ High-quality model evaluation (Accuracy, Precision, Recall, F1-score).
 
 **Clone the repository:**
 
-git clone https://github.com/your-username/pneumonia-detection.git
+git clone (https://github.com/bakkiyalakshmi86/MSAI.git)
 cd pneumonia-detection
 
 **Install dependencies:**
