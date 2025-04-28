@@ -28,3 +28,13 @@ pip install -r requirements.txt
 **Launch the Streamlit app:**
 streamlit run app/app.py
 
+**Steps to download data:**
+!mkdir -p ~/.kaggle
+!cp kaggle.json ~/.kaggle/kaggle.json
+!chmod 600 ~/.kaggle/kaggle.json
+
+!kaggle competitions download -c rsna-pneumonia-detection-challenge
+!unzip rsna-pneumonia-detection-challenge.zip
+
+
+
