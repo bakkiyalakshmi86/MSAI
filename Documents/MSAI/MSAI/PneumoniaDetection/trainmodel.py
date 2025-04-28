@@ -3,10 +3,12 @@ import torch
 from model import PneumoniaCNN
 from datapreprocessing import prepare_dataloaders
 import sys
+import matplotlib.pyplot as plt
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+
 # Define paths
-DATA_DIR = "/content/MSAI/Documents/MSAI/MSAI/PneumoniaDetection/data/rsna"
+DATA_DIR = "/Users/bakkiya/Documents/MSAI/MSAI/PneumoniaDetection/data/rsna-pneumonia-detection-challenge/"
 IMG_DIR = os.path.join(DATA_DIR, "stage_2_train_images")
 CSV_PATH = os.path.join(DATA_DIR, "stage_2_train_labels.csv")
 
@@ -21,6 +23,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Initialize model, loss, optimizer
 model = PneumoniaCNN().to(device)
+print(model)
 criterion = torch.nn.BCEWithLogitsLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 num_epoch=50
@@ -28,12 +31,12 @@ train_losses = []
 val_losses = []
 if __name__ == '__main__':
 # Training loop
-    for epoch in range(num_epoch):  # You can increase/decrease this
+    for epoch in range(num_epoch): 
         model.train()
         running_loss = 0.0
 
         for inputs, labels in train_loader:
-            inputs, labels = inputs.to(device), labels.to(device).unsqueeze(1)
+            inputs, labels = inputs.to(device), labels.to(device).unsqueeze(1).float()
             optimizer.zero_grad()
             outputs = model(inputs)
             loss = criterion(outputs, labels)
@@ -48,7 +51,7 @@ if __name__ == '__main__':
         val_loss = 0.0
         with torch.no_grad():
             for val_inputs, val_labels, _ in val_loader: 
-                val_inputs, val_labels = val_inputs.to(device), val_labels.to(device).unsqueeze(1)
+                val_inputs, val_labels = val_inputs.to(device), val_labels.to(device).unsqueeze(1).float()
                 val_outputs = model(val_inputs)
                 val_loss += criterion(val_outputs, val_labels).item()
         val_loss /= len(val_loader)
@@ -62,7 +65,7 @@ if __name__ == '__main__':
     print("✅ Model saved to model.pth")
 
     # Plot loss curves
-import matplotlib.pyplot as plt
+
 
 plt.plot(train_losses, label="Train Loss")
 plt.plot(val_losses, label="Val Loss")

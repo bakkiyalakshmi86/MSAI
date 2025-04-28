@@ -3,7 +3,7 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 from model import PneumoniaCNN
 from datapreprocessing import prepare_dataloaders
-from camutils import generate_gradcam, explain_with_lime,  explain_with_scorecam, explain_with_shap
+from camutils import generate_gradcam, explain_with_lime, explain_with_shap
 import pandas as pd
 import os
 from torchvision.transforms import ToPILImage
@@ -66,8 +66,11 @@ if __name__ == '__main__':
         # Generate SHAP explanation
         shap_img = explain_with_shap(model, image_tensor, original_image)
         
-        # Generate Score-CAM explanation
-        scorecam_img = explain_with_scorecam(model, image_tensor, original_image)
+        # Save the original image
+        original_image.save(os.path.join(
+            OUTPUT_DIR,
+            f"original_{idx}_{i}_pred{pred_labels[i].item()}_prob{probs[i]:.4f}_true{true_labels[i].item()}.png"
+        ))
 
         # Save the generated heatmap with prediction probability and true label
         heatmap.save(os.path.join(
@@ -84,10 +87,7 @@ if __name__ == '__main__':
             OUTPUT_DIR,
             f"shap_{idx}_{i}_pred{pred_labels[i].item()}_prob{probs[i]:.4f}_true{true_labels[i].item()}.png"
         ))
-        scorecam_img.save(os.path.join(
-            OUTPUT_DIR,
-            f"scorecam_{idx}_{i}_pred{pred_labels[i].item()}_prob{probs[i]:.4f}_true{true_labels[i].item()}.png"
-        ))
+        
             
             
     accuracy = correct / total

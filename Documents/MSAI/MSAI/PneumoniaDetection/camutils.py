@@ -16,8 +16,7 @@ from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 
 def generate_gradcam(model, input_tensor, original_image, target_layer=None, blend=True):
     if target_layer is None:
-        # Set default target layer if not provided
-        target_layer = model.conv_block5[0]  # Use the last convolutional layer
+                target_layer = model.conv_block5[0]  # Use the last convolutional layer
 
     model.eval()
 
@@ -35,11 +34,14 @@ def generate_gradcam(model, input_tensor, original_image, target_layer=None, ble
 
     output = model(input_tensor)
     model.zero_grad()
+
+    prob = torch.sigmoid(output)
     
     # For binary classification, the output is a scalar (single probability value for class 1)
-    # You want to compute the gradient of the output w.r.t the class of interest
-    class_idx = int((output > 0.5).item())  # class_idx will be 0 or 1 based on the threshold
-    output.backward()  # Backward pass w.r.t the scalar output
+    # compute the gradient of the output w.r.t the class of 1
+    class_idx = int((prob > 0.5).item())  
+
+    output.backward(retain_graph=True)  
 
     grads_val = gradients[0][0].detach().cpu().numpy()
     fmap = activations[0][0].detach().cpu().numpy()
@@ -97,9 +99,6 @@ def explain_with_shap(model, input_tensor, image):
 
     return blended
     
-
-""" 
-# LIME (ImageExplainer)
 def explain_with_lime(model, original_image):
     model.eval()
 
@@ -108,41 +107,14 @@ def explain_with_lime(model, original_image):
         transform = transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
-            transforms.Normalize([0.5], [0.5])
+            transforms.Normalize([0.5], [0.5])  
         ])
         batch = torch.stack([transform(Image.fromarray(img).convert("L")) for img in images], dim=0)
         with torch.no_grad():
-            preds = model(batch)
-            probs = torch.sigmoid(preds).squeeze().cpu().numpy()
-        return np.vstack([1 - probs, probs]).T
-
-    explainer = lime_image.LimeImageExplainer()
-    image_np = np.array(original_image.resize((224, 224)).convert("RGB"))
-    explanation = explainer.explain_instance(image_np, batch_predict, top_labels=1, hide_color=0, num_samples=1000)
-
-    lime_img, mask = explanation.get_image_and_mask(
-        label=explanation.top_labels[0],
-        positive_only=False,
-        num_features=10,
-        hide_rest=False
-    )
-    lime_output = Image.fromarray((mark_boundaries(lime_img, mask) * 255).astype(np.uint8))
-    return lime_output
-"""
-def explain_with_lime(model, original_image):
-    model.eval()
-
-    def batch_predict(images):
-        model.eval()
-        transform = transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-            transforms.Normalize([0.5], [0.5])  # Adjust based on your model's normalization
-        ])
-        batch = torch.stack([transform(Image.fromarray(img).convert("L")) for img in images], dim=0)
-        with torch.no_grad():
-            preds = model(batch)  # Model already applies sigmoid
-            probs = preds.squeeze().cpu().numpy()  # No need to apply sigmoid again
+            output = model(batch)
+            preds = torch.sigmoid(output) 
+            #preds=model(batch)
+            probs = preds.squeeze().cpu().numpy()  
         return np.vstack([1 - probs, probs]).T  # Return both class probabilities for LIME
 
     # Prepare image for LIME
@@ -166,42 +138,4 @@ def explain_with_lime(model, original_image):
     lime_output = Image.fromarray((mark_boundaries(lime_img, mask) * 255).astype(np.uint8))
 
     return lime_output
-
-# Score-CAM using TorchCAM
-def explain_with_scorecam(model, input_tensor, original_image, target_layer=None):
-    if target_layer is None:
-        # Set default target layer if not provided
-        target_layer = model.conv_block5[0]
-    model.eval()
-    
-    # Initialize ScoreCAM
-    cam_extractor = ScoreCAM(model=model, target_layers=[target_layer]) 
-
-    # Run forward pass and get scores
-    scores = model(input_tensor)
-    class_idx = scores.argmax().item()
-    
-    # Get the CAM for the predicted class
-    activation_map = cam_extractor(class_idx, scores)[0].cpu().numpy()
-
-    # Normalize activation map
-    activation_map -= activation_map.min()
-    activation_map /= activation_map.max()
-
-    # Resize to original image size
-    activation_map_resized = Image.fromarray(np.uint8(activation_map * 255)).resize(original_image.size, resample=Image.BILINEAR)
-
-    # Convert to heatmap using matplotlib
-    colormap = plt.get_cmap("jet")
-    heatmap_np = np.array(colormap(np.array(activation_map_resized)/255.0))[:, :, :3]  # Drop alpha channel
-    heatmap_img = Image.fromarray((heatmap_np * 255).astype(np.uint8)).convert("RGB")
-
-    # Convert original to RGB if not already
-    if original_image.mode != "RGB":
-        original_image = original_image.convert("RGB")
-
-    # Blend images
-    blended = Image.blend(original_image, heatmap_img, alpha=0.5)
-    return blended
-
 

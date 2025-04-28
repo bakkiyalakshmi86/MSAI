@@ -7,7 +7,7 @@ import numpy as np
 import torch.nn.functional as F
 import matplotlib.cm as cm
 from torchvision.transforms import ToPILImage
-from camutils import generate_gradcam, explain_with_lime,  explain_with_scorecam, explain_with_shap
+from camutils import generate_gradcam, explain_with_lime, explain_with_shap
 
 
 
@@ -37,7 +37,7 @@ if uploaded_file is not None:
     # Prediction
     with torch.no_grad():
         output = model(input_tensor)
-        prob = output.item()
+        prob = torch.sigmoid(output).squeeze()
 
     # Display prediction
     diagnosis = "Pneumonia Detected" if prob > 0.5 else "Normal"
@@ -57,9 +57,6 @@ if uploaded_file is not None:
     lime_img = explain_with_lime(model, image)
     st.image(lime_img, caption="LIME Interpretation", use_column_width=True)
 
-    st.markdown("### Score-CAM Explanation")
-    scorecam_img = explain_with_scorecam(model, input_tensor, image, target_layer=target_layer)
-    st.image(scorecam_img, caption="Score-CAM", use_column_width=True)
     
 
     
